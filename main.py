@@ -154,7 +154,7 @@ async def scan_web():
     else:
         response = requests.get(config["scan_url"])
         if not response.text:
-            print("[red]Error while scanning: [bold]Response is empty[/bold red]")
+            print("[red]Error while scanning: [bold]Response is empty[/bold][/red]")
             return
         elif response.status_code != 200:
             if not config["is_broken"]:
@@ -165,7 +165,7 @@ async def scan_web():
 
                 config["is_broken"] = True
                 save_config()
-            print(f"[red]Error while scanning: [bold]Status code: {response.status_code}[/bold red]")
+            print(f"[red]Error while scanning: [bold]Status code: {response.status_code}[/bold][/red]")
             return
         elif config["is_broken"] and response.status_code == 200:
             embed = discord.Embed()
@@ -180,6 +180,7 @@ async def scan_web():
             return
 
         hashed = sha256(response.text.encode("utf-8")).hexdigest()
+        print(f"[cyan]Scanned [bold]{config['scan_url']}[/bold] | Hash: [bold]{hashed}[/bold][/cyan]")
         with open(base_dir / "latest.txt") as f:
             if hashed != f.read():
                 text = str(response.text)
