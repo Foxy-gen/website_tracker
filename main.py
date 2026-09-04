@@ -13,6 +13,7 @@ load_dotenv()
 
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 base_dir = Path(__file__).resolve().parent
+date = lambda: datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -34,10 +35,11 @@ load_config()
 
 @bot.event
 async def on_ready():
-    print(f"[green]Logged in as \"[bold]{bot.user}[/bold]\"[/green]")
+    date_now = date()
+    print(f"[bright_black]{date_now}[/bright_black]\t[green]Logged in as \"[bold]{bot.user}[/bold]\"[/green]")
 
     if not config["scan_channel"]:
-        print("[red bold]No output channel assigned![/bold red]")
+        print(f"[bright_black]{date_now}[/bright_black]\t[red bold]No output channel assigned![/bold red]")
 
     if config["scan_loop"] and not scan_web.is_running():
         scan_web.start()
@@ -77,7 +79,8 @@ async def change_channel(ctx, id:str):
     embed.color = discord.Color(0x00ff00)
     await ctx.send(embed=embed)
 
-    print(f"[green]Output channel changed to: [bold]{id}[/bold green]")
+    date_now = date()
+    print(f"[bright_black]{date_now}[/bright_black]\t[green]Output channel changed to: [bold]{id}[/bold][/green]")
 
 
 @bot.command(name="scan_interval")
@@ -94,11 +97,13 @@ async def change_interval(ctx, sec:int):
     config["scan_interval"] = inter
     save_config()
 
-    print(f"[green]Loop interval changed to: [bold]{inter}[/bold] sec[/green]")
+    date_now = date()
+    print(f"[bright_black]{date_now}[/bright_black]\t[green]Loop interval changed to: [bold]{inter}[/bold] sec[/green]")
 
 
 @bot.command(name="scan_url")
 async def change_url(ctx, url:str):
+    date_now = date()
     try:
         requests.get(url.strip())
     except:
@@ -107,7 +112,8 @@ async def change_url(ctx, url:str):
         embed.description = "Target Scan URL wasn't changed."
         embed.color = discord.Color(0xff7700)
         await ctx.send(embed=embed)
-        print(f"[red] Declined change URL to [bold]{url}[/bold red]")
+
+        print(f"[bright_black]{date_now}[/bright_black]\t[red]Declined change URL to [bold]{url}[/bold][/red]")
     else:
         config["scan_url"] = url.strip()
         save_config()
@@ -116,11 +122,13 @@ async def change_url(ctx, url:str):
         embed.title = "New Target URL was set!"
         embed.color = discord.Color(0x00ff00)
         await ctx.send(embed=embed)
-        print(f"[green] Changed URL to [bold]{url}[/bold green]")
+
+        print(f"[bright_black]{date_now}[/bright_black]\t[green]Changed URL to [bold]{url}[/bold][/green]")
 
 
 @bot.command(name="scan_loop")
 async def scan_toggle(ctx):
+    date_now = date()
     if config["scan_loop"]:
         scan_web.cancel()
 
@@ -128,6 +136,8 @@ async def scan_toggle(ctx):
         embed.title = "Stopped Loop Checking"
         embed.color = discord.Color(0xff0000)
         await ctx.send(embed=embed)
+
+        print(f"[bright_black]{date_now}[/bright_black]\t[green]Turned scan loop [bold]OFF[/bold][/green]")
 
     else:
         if not scan_web.is_running():
@@ -138,6 +148,7 @@ async def scan_toggle(ctx):
         embed.color = discord.Color(0x00ff00)
         await ctx.send(embed=embed)
 
+        print(f"[bright_black]{date_now}[/bright_black]\t[green]Turned scan loop [bold]ON[/bold][/green]")
     config["scan_loop"] = not config["scan_loop"]
     save_config()
 
@@ -152,9 +163,10 @@ async def scan_web():
         await bot.get_channel(config["scan_channel"]).send(embed=embed)
 
     else:
+        date_now = date()
         response = requests.get(config["scan_url"])
         if not response.text:
-            print("[red]Error while scanning: [bold]Response is empty[/bold][/red]")
+            print(f"[bright_black]{date_now}[/bright_black]\t[red]Error while scanning: [bold]Response is empty[/bold][/red]")
             return
         elif response.status_code != 200:
             if not config["is_broken"]:
@@ -165,7 +177,7 @@ async def scan_web():
 
                 config["is_broken"] = True
                 save_config()
-            print(f"[red]Error while scanning: [bold]Status code: {response.status_code}[/bold][/red]")
+            print(f"[bright_black]{date_now}[/bright_black]\t[red]Error while scanning: [bold]Status code: {response.status_code}[/bold][/red]")
             return
         elif config["is_broken"] and response.status_code == 200:
             embed = discord.Embed()
@@ -176,11 +188,11 @@ async def scan_web():
             config["is_broken"] = False
             save_config()
 
-            print("[green]Website is working now![/green]")
+            print(f"[bright_black]{date_now}[/bright_black]\t[green]Website is working now![/green]")
             return
 
         hashed = sha256(response.text.encode("utf-8")).hexdigest()
-        print(f"[cyan]Scanned [bold]{config['scan_url']}[/bold] | Hash: [bold]{hashed}[/bold][/cyan]")
+        print(f"[bright_black]{date_now}[/bright_black]\t[cyan]Scanned [bold]{config['scan_url']}[/bold] | Hash: [bold]{hashed}[/bold][/cyan]")
         with open(base_dir / "latest.txt") as f:
             if hashed != f.read():
                 text = str(response.text)
